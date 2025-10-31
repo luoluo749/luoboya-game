@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>躲避球小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .score-container, .lives-container, .level-container {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+        
+        .label {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+        
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            max-height: 400px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 15px;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .instructions h2 {
+            margin-bottom: 8px;
+            color: #ffcc00;
+            font-size: 1.2rem;
+        }
+        
+        .instructions p {
+            margin-bottom: 6px;
+            line-height: 1.4;
+            font-size: 0.9rem;
+        }
+        
+        .game-over, .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .game-over h2, .start-screen h2 {
+            font-size: 2.2rem;
+            color: #ffcc00;
+            margin-bottom: 15px;
+        }
+        
+        .game-over p, .start-screen p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        
+        .touch-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+        
+        @media (max-height: 700px) {
+            .game-area {
+                height: 55vh;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .value {
+                font-size: 1.5rem;
+            }
+            
+            button {
+                padding: 10px 15px;
+                min-width: 100px;
+                font-size: 0.9rem;
+            }
+            
+            .game-area {
+                height: 50vh;
+            }
+            
+            .control-btn {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>躲避球小游戏</h1>
+        </header>
+        
+        <div class="game-info">
+            <div class="score-container">
+                <div class="label">得分</div>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="lives-container">
+                <div class="label">生命</div>
+                <div class="value" id="lives">3</div>
+            </div>
+            <div class="level-container">
+                <div class="label">关卡</div>
+                <div class="value" id="level">1</div>
+            </div>
+        </div>
+        
+        <div class="game-area" id="gameArea">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="touch-controls">
+                <div class="control-btn" id="leftBtn">←</div>
+                <div class="control-btn" id="rightBtn">→</div>
+            </div>
+            
+            <div class="start-screen" id="startScreen">
+                <h2>躲避球小游戏</h2>
+                <p>使用左右按钮控制角色移动，躲避从上方落下的球。坚持越久得分越高！</p>
+                <button id="startButton">开始游戏</button>
+            </div>
+            
+            <div class="game-over" id="gameOver" style="display: none;">
+                <h2>游戏结束!</h2>
+                <p>最终得分: <span id="finalScore">0</span></p>
+                <p>最高分: <span id="bestScore">0</span></p>
+                <button id="restartButton">再玩一次</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="resetButton">重置游戏</button>
+        </div>
+        
+        <div class="instructions">
+            <h2>游戏说明</h2>
+            <p>• 点击开始游戏按钮开始游戏</p>
+            <p>• 使用左右按钮控制角色移动</p>
+            <p>• 躲避从上方落下的球</p>
+            <p>• 每躲避一个球得1分</p>
+            <p>• 每得100分进入下一关，球会加速</p>
+            <p>• 被球击中会失去一条生命</p>
+            <p>• 生命值为0时游戏结束</p>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态变量
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let bestScore = 0;
+        let player = null;
+        let balls = [];
+        let animationId;
+        let leftPressed = false;
+        let rightPressed = false;
+        let lastBallTime = 0;
+        const BALL_INTERVAL = 1000; // 1秒生成一个球
+        
+        // DOM元素引用
+        let canvas, ctx;
+        let scoreElement, livesElement, levelElement;
+        let startButton, resetButton, restartButton;
+        let leftBtn, rightBtn;
+        let gameOverScreen, finalScoreElement, bestScoreElement;
+        let gameArea, startScreen;
+        
+        // 玩家类
+        class Player {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.speed = 10; // 提高移动速度
+                this.color = '#4CAF50';
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // 绘制玩家面部
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x + this.width/4, this.y + this.height/4, this.width/10, this.height/10);
+                ctx.fillRect(this.x + this.width*3/4 - this.width/10, this.y + this.height/4, this.width/10, this.height/10);
+                ctx.fillRect(this.x + this.width/3, this.y + this.height*2/3, this.width/3, this.height/10);
+            }
+            
+            move(direction) {
+                if (direction === 'left') {
+                    this.x = Math.max(0, this.x - this.speed);
+                } else if (direction === 'right') {
+                    this.x = Math.min(canvas.width - this.width, this.x + this.speed);
+                }
+            }
+        }
+        
+        // 球类
+        class Ball {
+            constructor() {
+                this.radius = 15 + Math.random() * 10; // 增大球的大小范围
+                this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+                this.y = -this.radius;
+                this.speed = 2 + Math.random() * 1 + level * 0.3; // 降低初始速度和随机关卡增加速度
+                this.color = this.getRandomColor();
+            }
+            
+            getRandomColor() {
+                const colors = ['#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#536DFE', '#448AFF', '#40C4FF', '#18FFFF', '#64FFDA', '#69F0AE'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            update() {
+                this.y += this.speed;
+                
+                // 检查是否击中玩家
+                if (this.y + this.radius > player.y && 
+                    this.x + this.radius > player.x && 
+                    this.x - this.radius < player.x + player.width) {
+                    
+                    // 球击中玩家顶部
+                    if (this.y - this.radius < player.y + player.height) {
+                        return 'hit';
+                    }
+                }
+                
+                // 检查是否超出屏幕
+                if (this.y - this.radius > canvas.height) {
+                    return 'missed';
+                }
+                
+                return 'active';
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // 添加高光效果
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius/3, this.y - this.radius/3, this.radius/3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fill();
+            }
+        }
+        
+        // 绘制背景
+        function drawBackground() {
+            // 天空
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1a2a6c');
+            gradient.addColorStop(1, '#b21f1f');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 地面
+            ctx.fillStyle = '#2d5016';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            
+            // 草
+            ctx.fillStyle = '#3a7d34';
+            for (let i = 0; i < canvas.width; i += 8) {
+                const height = 8 + Math.random() * 10;
+                ctx.fillRect(i, canvas.height - 20, 4, -height);
+            }
+        }
+        
+        // 绘制游戏场景
+        function drawGame() {
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            drawBackground();
+            
+            // 绘制玩家
+            if (player) {
+                player.draw();
+            }
+            
+            // 绘制所有球
+            balls.forEach(ball => {
+                ball.draw();
+            });
+        }
+        
+        // 游戏循环
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            // 根据按钮状态移动玩家
+            if (leftPressed) {
+                player.move('left');
+            }
+            if (rightPressed) {
+                player.move('right');
+            }
+            
+            // 更新所有球的位置
+            balls.forEach((ball, index) => {
+                const result = ball.update();
+                
+                if (result === 'hit') {
+                    // 球击中玩家
+                    balls.splice(index, 1);
+                    loseLife();
+                } else if (result === 'missed') {
+                    // 球未击中玩家，玩家得分
+                    balls.splice(index, 1);
+                    score += 1;
+                    scoreElement.textContent = score;
+                    
+                    // 每100分升一级
+                    if (score % 100 === 0) {
+                        levelUp();
+                    }
+                }
+            });
+            
+            // 控制球的生成频率 - 最多1秒一个
+            const currentTime = Date.now();
+            if (currentTime - lastBallTime > BALL_INTERVAL && Math.random() < 0.5) {
+                balls.push(new Ball());
+                lastBallTime = currentTime;
+            }
+            
+            drawGame();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        // 开始游戏
+        function startGame() {
+            console.log("开始游戏函数被调用");
+            
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            level = 1;
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            levelElement.textContent = level;
+            
+            player = new Player(canvas.width/2 - 25, canvas.height - 50, 50, 30);
+            balls = [];
+            lastBallTime = Date.now();
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            // 开始游戏循环
+            gameLoop();
+            
+            console.log("游戏已开始");
+        }
+        
+        // 重置游戏
+        function resetGame() {
+            console.log("重置游戏函数被调用");
+            
+            gameRunning = false;
+            score = 0;
+            lives = 3;
+            level = 1;
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            levelElement.textContent = level;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            
+            leftPressed = false;
+            rightPressed = false;
+            
+            drawGame();
+            
+            console.log("游戏已重置");
+        }
+        
+        // 升级
+        function levelUp() {
+            level++;
+            levelElement.textContent = level;
+            
+            // 升级特效
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            setTimeout(() => {
+                // 恢复正常显示
+                drawGame();
+            }, 200);
+        }
+        
+        // 失去生命
+        function loseLife() {
+            lives--;
+            livesElement.textContent = lives;
+            
+            // 受伤特效
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            setTimeout(() => {
+                // 恢复正常显示
+                drawGame();
+            }, 200);
+            
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+        
+        // 结束游戏
+        function endGame() {
+            gameRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // 更新最高分
+            if (score > bestScore) {
+                bestScore = score;
+            }
+            
+            finalScoreElement.textContent = score;
+            bestScoreElement.textContent = bestScore;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // 初始化游戏
+        function initGame() {
+            console.log("初始化游戏开始");
+            
+            // 获取DOM元素
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            scoreElement = document.getElementById('score');
+            livesElement = document.getElementById('lives');
+            levelElement = document.getElementById('level');
+            startButton = document.getElementById('startButton');
+            resetButton = document.getElementById('resetButton');
+            restartButton = document.getElementById('restartButton');
+            leftBtn = document.getElementById('leftBtn');
+            rightBtn = document.getElementById('rightBtn');
+            gameOverScreen = document.getElementById('gameOver');
+            finalScoreElement = document.getElementById('finalScore');
+            bestScoreElement = document.getElementById('bestScore');
+            gameArea = document.getElementById('gameArea');
+            startScreen = document.getElementById('startScreen');
+            
+            // 设置画布尺寸
+            function resizeCanvas() {
+                canvas.width = gameArea.offsetWidth;
+                canvas.height = gameArea.offsetHeight;
+                drawGame();
+            }
+            
+            resizeCanvas();
+            
+            // 绑定事件监听器
+            console.log("绑定事件监听器");
+            
+            // 按钮事件
+            startButton.onclick = startGame;
+            resetButton.onclick = resetGame;
+            restartButton.onclick = startGame;
+            
+            // 控制按钮事件 - 支持连续按下
+            leftBtn.onmousedown = function() { leftPressed = true; };
+            leftBtn.onmouseup = function() { leftPressed = false; };
+            leftBtn.onmouseleave = function() { leftPressed = false; };
+            
+            rightBtn.onmousedown = function() { rightPressed = true; };
+            rightBtn.onmouseup = function() { rightPressed = false; };
+            rightBtn.onmouseleave = function() { rightPressed = false; };
+            
+            // 触摸事件
+            leftBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                leftPressed = true;
+            });
+            
+            leftBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                leftPressed = false;
+            });
+            
+            rightBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                rightPressed = true;
+            });
+            
+            rightBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                rightPressed = false;
+            });
+            
+            // 键盘事件
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    leftPressed = true;
+                } else if (e.key === 'ArrowRight') {
+                    rightPressed = true;
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    leftPressed = false;
+                } else if (e.key === 'ArrowRight') {
+                    rightPressed = false;
+                }
+            });
+            
+            // 窗口大小改变时调整画布
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 初始绘制
+            drawGame();
+            
+            console.log("游戏初始化完成");
+        }
+        
+        // 页面加载完成后初始化游戏
+        window.onload = initGame;
+    </script>
+</body>
+</html>
