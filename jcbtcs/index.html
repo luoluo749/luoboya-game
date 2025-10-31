@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DeepSeek贪吃蛇合集</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #2c3e50);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: auto;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(25, 25, 35, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            background: rgba(15, 15, 25, 0.9);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #00a8ff;
+        }
+        
+        .title {
+            color: #fff;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00a8ff, 0 0 20px #0080ff;
+        }
+        
+        .subtitle {
+            color: #66d9ff;
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .game-selector {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .game-btn {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-btn.active {
+            background: linear-gradient(to right, #ff512f, #f09819);
+            box-shadow: 0 0 15px rgba(255, 81, 47, 0.5);
+        }
+        
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .game-board-container {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(10, 10, 20, 0.7);
+            padding: 12px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #00a8ff;
+            box-shadow: 0 0 15px rgba(0, 168, 255, 0.3);
+        }
+        
+        .score-box {
+            color: #fff;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .score-label {
+            font-size: 0.9rem;
+            color: #66d9ff;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4deeea;
+        }
+        
+        .game-board {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 500px;
+            background: rgba(5, 5, 15, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            border: 2px solid #00a8ff;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            gap: 1px;
+        }
+        
+        .cell {
+            background: rgba(30, 30, 50, 0.5);
+            border-radius: 3px;
+        }
+        
+        .snake {
+            background: linear-gradient(135deg, #00ffb3, #00d9ff);
+            border-radius: 40%;
+            box-shadow: 0 0 5px #00ffaa;
+        }
+        
+        .snake-head {
+            background: linear-gradient(135deg, #00ff9d, #00c3ff);
+            border-radius: 45%;
+            box-shadow: 0 0 10px #00ffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .snake-head::before {
+            content: "";
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 5px;
+            height: 5px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ffff;
+        }
+        
+        .ai-snake {
+            background: linear-gradient(135deg, #4a00e0, #8e2de2);
+            border-radius: 40%;
+            box-shadow: 0 0 5px #8e2de2;
+        }
+        
+        .ai-snake-head {
+            background: linear-gradient(135deg, #4a00e0, #8e2de2);
+            border-radius: 45%;
+            box-shadow: 0 0 10px #8e2de2;
+        }
+        
+        .ai2-snake {
+            background: linear-gradient(135deg, #ff0080, #ff8c00);
+            border-radius: 40%;
+            box-shadow: 0 0 5px #ff0080;
+        }
+        
+        .ai2-snake-head {
+            background: linear-gradient(135deg, #ff0080, #ff8c00);
+            border-radius: 45%;
+            box-shadow: 0 0 10px #ff0080;
+        }
+        
+        .food {
+            background: linear-gradient(135deg, #ff0077, #ff00cc);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff00aa, 0 0 20px #ff0077;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.9); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(0.9); }
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background: rgba(20, 20, 30, 0.7);
+            border-radius: 15px;
+            border: 1px solid #6a00ff;
+            box-shadow: 0 0 15px rgba(106, 0, 255, 0.3);
+        }
+        
+        .control-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            color: #aa80ff;
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            outline: none;
+            touch-action: manipulation;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+        
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-start {
+            background: linear-gradient(to right, #00c853, #00b248);
+        }
+        
+        .btn-pause {
+            background: linear-gradient(to right, #ff9800, #f57c00);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(to right, #d50000, #b71c1c);
+        }
+        
+        .keyboard-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 70px);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .key {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(50, 50, 80, 0.5);
+            border: 2px solid #4a00e0;
+            border-radius: 10px;
+            color: #aa80ff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+        }
+        
+        .key:hover {
+            background: rgba(60, 60, 90, 0.7);
+            border-color: #6a00ff;
+        }
+        
+        .key:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .key.up { grid-column: 2; grid-row: 1; }
+        .key.left { grid-column: 1; grid-row: 2; }
+        .key.right { grid-column: 3; grid-row: 2; }
+        .key.down { grid-column: 2; grid-row: 3; }
+        
+        .key i {
+            font-size: 1.8rem;
+        }
+        
+        .instructions {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instructions h3 {
+            color: #00e5ff;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .instructions p {
+            color: #e6f7ff;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .achievements {
+            background: rgba(15, 15, 25, 0.7);
+            padding: 12px;
+            border-radius: 15px;
+            margin-top: 12px;
+        }
+        
+        .achievements h4 {
+            color: #ff55a8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .achievement-list {
+            list-style-type: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .achievement-list li {
+            padding: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffe6f7;
+            font-size: 0.85rem;
+        }
+        
+        .achievement-list li span:first-child {
+            color: #ff77b3;
+        }
+        
+        /* 横竖屏适配 */
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .game-board {
+                height: 400px;
+                max-width: 100%;
+            }
+            
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .score-panel {
+                padding: 10px 15px;
+            }
+            
+            .score-value {
+                font-size: 1.3rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-board {
+                height: 300px;
+            }
+            
+            .keyboard-controls {
+                grid-template-rows: repeat(3, 60px);
+            }
+            
+            .btn {
+                min-width: 90px;
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .score-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .score-box {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .score-label {
+                margin-bottom: 0;
+            }
+        }
+        
+        @media (max-height: 700px) and (orientation: landscape) {
+            .container {
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+            
+            .game-board {
+                height: 300px;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .game-area {
+                padding: 15px;
+            }
+        }
+        
+        /* 游戏消息样式 */
+        .game-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 10;
+            background: rgba(0, 10, 20, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #00a8ff;
+            width: 80%;
+            max-width: 300px;
+        }
+        
+        .game-message h2 {
+            color: #00ffaa;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #00ff77;
+        }
+        
+        .game-message p {
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* 触摸控制区域 */
+        .touch-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            height: 150px;
+            z-index: 5;
+            touch-action: none;
+        }
+        
+        .touch-area {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin: 0 10px;
+        }
+        
+        /* 双人机对战模式特定样式 */
+        .ai-only .keyboard-controls,
+        .ai-only .touch-controls {
+            display: none;
+        }
+        
+        .ai-only .control-section:nth-child(2) {
+            display: none;
+        }
+        
+        /* 手机横屏样式 */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .touch-controls {
+                display: block;
+            }
+            
+            .game-board-container {
+                margin-bottom: 160px;
+            }
+        }
+        
+        /* 手机竖屏样式 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .touch-controls {
+                display: block;
+            }
+            
+            .game-board-container {
+                margin-bottom: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title"><i class="fas fa-code"></i> DeepSeek 贪吃蛇合集</h1>
+            <p class="subtitle">体验多种贪吃蛇游戏模式 - 经典模式、人机对战、双人机对战</p>
+        </div>
+        
+        <div class="game-selector">
+            <button class="game-btn active" data-game="classic">
+                <i class="fas fa-star"></i> 经典模式
+            </button>
+            <button class="game-btn" data-game="ai">
+                <i class="fas fa-robot"></i> 人机对战
+            </button>
+            <button class="game-btn" data-game="double-ai">
+                <i class="fas fa-robot"></i><i class="fas fa-robot"></i> 双人机对战
+            </button>
+        </div>
+        
+        <div class="game-area">
+            <div class="game-board-container">
+                <div class="score-panel">
+                    <div class="score-box">
+                        <div class="score-label">玩家分数</div>
+                        <div id="score-value" class="score-value">0</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-label">AI分数</div>
+                        <div id="ai-score-value" class="score-value">0</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-label">AI2分数</div>
+                        <div id="ai2-score-value" class="score-value">0</div>
+                    </div>
+                </div>
+                
+                <div class="game-board" id="game-board">
+                    <div class="game-message" id="game-message">
+                        <h2>游戏开始</h2>
+                        <p>使用方向键或WASD控制小蛇移动</p>
+                        <button class="btn btn-start" id="start-btn"><i class="fas fa-play"></i> 开始游戏</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-section">
+                    <h2 class="section-title"><i class="fas fa-gamepad"></i> 游戏控制</h2>
+                    <div class="buttons">
+                        <button class="btn btn-start" id="startBtn"><i class="fas fa-play"></i> 开始</button>
+                        <button class="btn btn-pause" id="pauseBtn" disabled><i class="fas fa-pause"></i> 暂停</button>
+                        <button class="btn btn-reset" id="resetBtn" disabled><i class="fas fa-redo"></i> 重置</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2 class="section-title"><i class="fas fa-keyboard"></i> 键盘控制</h2>
+                    <div class="keyboard-controls">
+                        <div class="key up"><i class="fas fa-arrow-up"></i></div>
+                        <div class="key left"><i class="fas fa-arrow-left"></i></div>
+                        <div class="key right"><i class="fas fa-arrow-right"></i></div>
+                        <div class="key down"><i class="fas fa-arrow-down"></i></div>
+                    </div>
+                    <p style="color: #aa80ff; margin-top: 15px;">也可以使用 W A S D 键控制</p>
+                </div>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> 游戏说明</h3>
+                    <p id="game-instructions">使用方向键或 W, A, S, D 控制贪吃蛇移动。吃到食物(红色发光球)可增加分数和蛇的长度。撞到墙壁或自己的身体游戏结束。</p>
+                    
+                    <div class="achievements">
+                        <h4><i class="fas fa-trophy"></i> 成就系统</h4>
+                        <ul class="achievement-list" id="achievement-list">
+                            <li><span>普通成就：我只有头</span> <span>未达成</span></li>
+                            <li><span>困难成就：我的尾巴呢？</span> <span>未达成</span></li>
+                            <li><span>普通成就：……而弱者愈强</span> <span>未达成</span></li>
+                            <li><span>困难成就：强者愈弱……</span> <span>未达成</span></li>
+                            <li><span>神话成就：小小AI，拿捏！</span> <span>未达成</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 触摸控制区域 -->
+    <div class="touch-controls">
+        <div class="touch-area" id="touch-area"></div>
+    </div>
+
+    <script>
+        // 游戏配置
+        const GRID_SIZE = 20;
+        const INITIAL_SPEED = 150;
+        const SPEED_INCREMENT = 3;
+        
+        // 游戏状态
+        let currentGame = "classic";
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameInterval = null;
+        let achievements = [];
+        
+        // 触摸控制相关变量
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        // 游戏状态对象
+        const gameState = {
+            snake: [],
+            food: {},
+            aiSnake: [],
+            ai2Snake: [],
+            direction: 'right',
+            nextDirection: 'right',
+            aiDirection: 'right',
+            ai2Direction: 'right',
+            score: 0,
+            aiScore: 0,
+            ai2Score: 0,
+            gameSpeed: INITIAL_SPEED,
+            gameStarted: false
+        };
+        
+        // DOM元素
+        const gameBoard = document.getElementById('game-board');
+        const scoreValue = document.getElementById('score-value');
+        const aiScoreValue = document.getElementById('ai-score-value');
+        const ai2ScoreValue = document.getElementById('ai2-score-value');
+        const gameMessage = document.getElementById('game-message');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const gameInstructions = document.getElementById('game-instructions');
+        const achievementList = document.getElementById('achievement-list');
+        const touchArea = document.getElementById('touch-area');
+        
+        // 初始化游戏
+        function initGame() {
+            // 设置游戏说明
+            const instructions = {
+                "classic": "使用方向键或 W, A, S, D 控制贪吃蛇移动。吃到食物(红色发光球)可增加分数和蛇的长度。撞到墙壁或自己的身体游戏结束。",
+                "ai": "使用方向键或 W, A, S, D 控制黑色蛇。蓝色蛇是AI对手。吃到食物增加得分，撞墙重置。比较你和AI的得分！",
+                "double-ai": "观看两个AI蛇对战！蓝色和紫色蛇是AI对手。它们会自动寻找食物并竞争。"
+            };
+            
+            gameInstructions.textContent = instructions[currentGame];
+            
+            // 根据游戏模式更新UI
+            updateUIBasedOnGameMode();
+            
+            // 创建游戏网格
+            createGameGrid();
+            
+            // 重置游戏状态
+            resetGame();
+            
+            // 设置事件监听器
+            setupEventListeners();
+        }
+        
+        // 根据游戏模式更新UI
+        function updateUIBasedOnGameMode() {
+            const controls = document.querySelector('.controls');
+            
+            if (currentGame === "double-ai") {
+                controls.classList.add('ai-only');
+            } else {
+                controls.classList.remove('ai-only');
+            }
+        }
+        
+        // 创建游戏网格
+        function createGameGrid() {
+            gameBoard.innerHTML = '';
+            
+            // 添加游戏消息
+            gameBoard.appendChild(gameMessage);
+            
+            // 创建网格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    cell.id = `cell-${row}-${col}`;
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+        
+        // 重置游戏状态
+        function resetGame() {
+            // 清除游戏循环
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            
+            // 重置游戏状态
+            gameState.snake = [
+                {row: 10, col: 9},
+                {row: 10, col: 8},
+                {row: 10, col: 7}
+            ];
+            
+            gameState.direction = 'right';
+            gameState.nextDirection = 'right';
+            gameState.score = 0;
+            gameState.gameSpeed = INITIAL_SPEED;
+            gameState.gameStarted = false;
+            
+            // 重置AI蛇（如果当前模式需要）
+            if (currentGame === "ai") {
+                gameState.aiSnake = [
+                    {row: 5, col: 5},
+                    {row: 5, col: 6},
+                    {row: 5, col: 7}
+                ];
+                gameState.aiDirection = 'right';
+                gameState.aiScore = 0;
+            } else if (currentGame === "double-ai") {
+                gameState.aiSnake = [
+                    {row: 5, col: 5},
+                    {row: 5, col: 6},
+                    {row: 5, col: 7}
+                ];
+                gameState.ai2Snake = [
+                    {row: 15, col: 5},
+                    {row: 15, col: 6},
+                    {row: 15, col: 7}
+                ];
+                gameState.aiDirection = 'right';
+                gameState.ai2Direction = 'left';
+                gameState.aiScore = 0;
+                gameState.ai2Score = 0;
+                
+                // 双人机对战模式不需要玩家蛇
+                gameState.snake = [];
+            }
+            
+            // 生成食物
+            generateFood();
+            
+            // 更新分数显示
+            updateScoreDisplay();
+            
+            // 渲染游戏
+            renderGame();
+            
+            // 更新按钮状态
+            updateButtonState();
+            
+            // 显示游戏消息
+            gameMessage.classList.remove('hidden');
+            let messageText = '';
+            
+            if (currentGame === "double-ai") {
+                messageText = `
+                    <h2>双人机对战模式</h2>
+                    <p>观看两个AI蛇的对战表演！</p>
+                `;
+            } else {
+                messageText = `
+                    <h2>${gameState.score === 0 ? '游戏准备!' : '游戏结束!'}</h2>
+                    <p>${gameState.score === 0 ? '使用方向键或WASD控制小蛇移动' : `你的得分: ${gameState.score}`}</p>
+                `;
+            }
+            
+            gameMessage.innerHTML = messageText + `<button class="btn btn-start" id="start-btn"><i class="fas fa-play"></i> 开始游戏</button>`;
+            
+            // 重新绑定开始按钮事件
+            const startBtnInMessage = document.getElementById('start-btn');
+            startBtnInMessage.addEventListener('click', startGame);
+        }
+        
+        // 生成食物
+        function generateFood() {
+            let newFood;
+            let foodOnSnake;
+            
+            do {
+                foodOnSnake = false;
+                newFood = {
+                    row: Math.floor(Math.random() * GRID_SIZE),
+                    col: Math.floor(Math.random() * GRID_SIZE)
+                };
+                
+                // 检查食物是否在玩家蛇身上
+                for (const segment of gameState.snake) {
+                    if (segment.row === newFood.row && segment.col === newFood.col) {
+                        foodOnSnake = true;
+                        break;
+                    }
+                }
+                
+                // 检查食物是否在AI蛇身上
+                if (!foodOnSnake && (currentGame === "ai" || currentGame === "double-ai")) {
+                    for (const segment of gameState.aiSnake) {
+                        if (segment.row === newFood.row && segment.col === newFood.col) {
+                            foodOnSnake = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // 检查食物是否在AI2蛇身上
+                if (!foodOnSnake && currentGame === "double-ai") {
+                    for (const segment of gameState.ai2Snake) {
+                        if (segment.row === newFood.row && segment.col === newFood.col) {
+                            foodOnSnake = true;
+                            break;
+                        }
+                    }
+                }
+            } while (foodOnSnake);
+            
+            gameState.food = newFood;
+        }
+        
+        // 更新分数显示
+        function updateScoreDisplay() {
+            scoreValue.textContent = gameState.score;
+            
+            if (currentGame === "ai" || currentGame === "double-ai") {
+                aiScoreValue.textContent = gameState.aiScore;
+            }
+            
+            if (currentGame === "double-ai") {
+                ai2ScoreValue.textContent = gameState.ai2Score;
+            }
+        }
+        
+        // 渲染游戏
+        function renderGame() {
+            // 清除所有单元格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.getElementById(`cell-${row}-${col}`);
+                    cell.className = "cell";
+                }
+            }
+            
+            // 渲染玩家蛇
+            for (let i = 0; i < gameState.snake.length; i++) {
+                const segment = gameState.snake[i];
+                const cell = document.getElementById(`cell-${segment.row}-${segment.col}`);
+                cell.classList.add(i === 0 ? "snake-head" : "snake");
+            }
+            
+            // 渲染AI蛇
+            if (currentGame === "ai" || currentGame === "double-ai") {
+                for (let i = 0; i < gameState.aiSnake.length; i++) {
+                    const segment = gameState.aiSnake[i];
+                    const cell = document.getElementById(`cell-${segment.row}-${segment.col}`);
+                    cell.classList.add(i === 0 ? "ai-snake-head" : "ai-snake");
+                }
+            }
+            
+            // 渲染AI2蛇
+            if (currentGame === "double-ai") {
+                for (let i = 0; i < gameState.ai2Snake.length; i++) {
+                    const segment = gameState.ai2Snake[i];
+                    const cell = document.getElementById(`cell-${segment.row}-${segment.col}`);
+                    cell.classList.add(i === 0 ? "ai2-snake-head" : "ai2-snake");
+                }
+            }
+            
+            // 渲染食物
+            const foodCell = document.getElementById(`cell-${gameState.food.row}-${gameState.food.col}`);
+            foodCell.classList.add("food");
+        }
+        
+        // 更新按钮状态
+        function updateButtonState() {
+            if (gameState.gameStarted) {
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 重新开始';
+                pauseBtn.disabled = false;
+                resetBtn.disabled = false;
+            } else {
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 开始';
+                pauseBtn.disabled = true;
+                resetBtn.disabled = true;
+            }
+        }
+        
+        // 游戏主循环
+        function gameLoop() {
+            // 更新移动方向
+            gameState.direction = gameState.nextDirection;
+            
+            // 移动玩家蛇（仅在非双人机对战模式）
+            if (currentGame !== "double-ai") {
+                moveSnake(gameState.snake, gameState.direction);
+                
+                // 检查玩家蛇碰撞
+                if (checkCollision(gameState.snake)) {
+                    endGame();
+                    return;
+                }
+                
+                // 检查玩家蛇是否吃到食物
+                const head = gameState.snake[0];
+                if (head.row === gameState.food.row && head.col === gameState.food.col) {
+                    // 增加分数和蛇长度
+                    gameState.score += 10;
+                    gameState.snake.push({...gameState.snake[gameState.snake.length - 1]});
+                    
+                    // 每吃3个食物增加速度
+                    if (gameState.score % 30 === 0) {
+                        gameState.gameSpeed -= SPEED_INCREMENT;
+                        if (gameInterval) {
+                            clearInterval(gameInterval);
+                        }
+                        gameInterval = setInterval(gameLoop, gameState.gameSpeed);
+                    }
+                    
+                    // 生成新食物
+                    generateFood();
+                    
+                    // 检查成就
+                    checkAchievements();
+                }
+            }
+            
+            // 移动AI蛇（如果当前模式需要）
+            if (currentGame === "ai" || currentGame === "double-ai") {
+                moveAiSnake(gameState.aiSnake, "ai");
+                
+                // 检查AI蛇是否吃到食物
+                const aiHead = gameState.aiSnake[0];
+                if (aiHead.row === gameState.food.row && aiHead.col === gameState.food.col) {
+                    gameState.aiScore += 10;
+                    gameState.aiSnake.push({...gameState.aiSnake[gameState.aiSnake.length - 1]});
+                    generateFood();
+                    checkAchievements();
+                }
+                
+                // 检查AI蛇碰撞
+                if (checkCollision(gameState.aiSnake)) {
+                    resetAiSnake(gameState.aiSnake, "ai");
+                }
+            }
+            
+            // 移动AI2蛇（如果当前模式需要）
+            if (currentGame === "double-ai") {
+                moveAiSnake(gameState.ai2Snake, "ai2");
+                
+                // 检查AI2蛇是否吃到食物
+                const ai2Head = gameState.ai2Snake[0];
+                if (ai2Head.row === gameState.food.row && ai2Head.col === gameState.food.col) {
+                    gameState.ai2Score += 10;
+                    gameState.ai2Snake.push({...gameState.ai2Snake[gameState.ai2Snake.length - 1]});
+                    generateFood();
+                    checkAchievements();
+                }
+                
+                // 检查AI2蛇碰撞
+                if (checkCollision(gameState.ai2Snake)) {
+                    resetAiSnake(gameState.ai2Snake, "ai2");
+                }
+            }
+            
+            // 更新分数显示
+            updateScoreDisplay();
+            
+            // 渲染游戏
+            renderGame();
+        }
+        
+        // 移动蛇
+        function moveSnake(snake, direction) {
+            const head = {...snake[0]};
+            
+            if (direction === 'up') {
+                head.row -= 1;
+            } else if (direction === 'down') {
+                head.row += 1;
+            } else if (direction === 'left') {
+                head.col -= 1;
+            } else if (direction === 'right') {
+                head.col += 1;
+            }
+            
+            snake.unshift(head);
+            snake.pop();
+        }
+        
+        // 移动AI蛇
+        function moveAiSnake(snake, aiType) {
+            const head = {...snake[0]};
+            const foodRow = gameState.food.row;
+            const foodCol = gameState.food.col;
+            
+            let direction;
+            
+            // 简单AI逻辑：朝着食物移动，但避免撞墙
+            if (Math.random() < 0.8) { // 80%的概率朝着食物移动
+                if (head.col < foodCol && canMove(snake, "right")) {
+                    direction = "right";
+                } else if (head.col > foodCol && canMove(snake, "left")) {
+                    direction = "left";
+                } else if (head.row < foodRow && canMove(snake, "down")) {
+                    direction = "down";
+                } else if (head.row > foodRow && canMove(snake, "up")) {
+                    direction = "up";
+                } else {
+                    // 随机选择可移动的方向
+                    const directions = ["up", "down", "left", "right"];
+                    const validDirections = directions.filter(d => canMove(snake, d));
+                    direction = validDirections.length > 0 ? 
+                        validDirections[Math.floor(Math.random() * validDirections.length)] : "up";
+                }
+            } else {
+                // 20%的概率随机移动
+                const directions = ["up", "down", "left", "right"];
+                const validDirections = directions.filter(d => canMove(snake, d));
+                direction = validDirections.length > 0 ? 
+                    validDirections[Math.floor(Math.random() * validDirections.length)] : "up";
+            }
+            
+            // 更新AI方向
+            if (aiType === "ai") {
+                gameState.aiDirection = direction;
+            } else {
+                gameState.ai2Direction = direction;
+            }
+            
+            // 移动AI蛇
+            moveSnake(snake, direction);
+        }
+        
+        // 重置AI蛇
+        function resetAiSnake(snake, aiType) {
+            if (aiType === "ai") {
+                gameState.aiSnake = [
+                    {row: 5, col: 5},
+                    {row: 5, col: 6},
+                    {row: 5, col: 7}
+                ];
+                gameState.aiDirection = 'right';
+                gameState.aiScore = 0;
+            } else {
+                gameState.ai2Snake = [
+                    {row: 15, col: 5},
+                    {row: 15, col: 6},
+                    {row: 15, col: 7}
+                ];
+                gameState.ai2Direction = 'left';
+                gameState.ai2Score = 0;
+            }
+        }
+        
+        // 检查是否可以移动
+        function canMove(snake, direction) {
+            const head = {...snake[0]};
+            
+            if (direction === 'up') {
+                head.row -= 1;
+            } else if (direction === 'down') {
+                head.row += 1;
+            } else if (direction === 'left') {
+                head.col -= 1;
+            } else if (direction === 'right') {
+                head.col += 1;
+            }
+            
+            // 检查是否撞墙
+            if (head.row < 0 || head.row >= GRID_SIZE || 
+                head.col < 0 || head.col >= GRID_SIZE) {
+                return false;
+            }
+            
+            // 检查是否撞到自己（除了尾部）
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].row === head.row && snake[i].col === head.col) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // 检查碰撞
+        function checkCollision(snake) {
+            const head = snake[0];
+            
+            // 检查是否撞墙
+            if (head.row < 0 || head.row >= GRID_SIZE || 
+                head.col < 0 || head.col >= GRID_SIZE) {
+                return true;
+            }
+            
+            // 检查是否撞到自己（除了尾部）
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].row === head.row && snake[i].col === head.col) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // 结束游戏
+        function endGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            
+            gameState.gameStarted = false;
+            updateButtonState();
+            
+            // 显示游戏结束消息
+            gameMessage.classList.remove('hidden');
+            gameMessage.innerHTML = `
+                <h2>游戏结束!</h2>
+                <p>你的得分: ${gameState.score}</p>
+                <button class="btn btn-start" id="start-btn"><i class="fas fa-redo"></i> 重新开始</button>
+            `;
+            
+            // 重新绑定开始按钮事件
+            const startBtnInMessage = document.getElementById('start-btn');
+            startBtnInMessage.addEventListener('click', startGame);
+        }
+        
+        // 检查成就
+        function checkAchievements() {
+            // 经典模式成就
+            if (currentGame === "classic") {
+                if (gameState.snake.length === 3) { // 只有头
+                    addAchievement("普通成就：我只有头，游戏名称：贪吃蛇游戏");
+                } else if (gameState.snake.length >= 100) {
+                    addAchievement("困难成就：我的尾巴呢？，游戏名称：贪吃蛇游戏");
+                }
+            }
+            
+            // 人机对战成就
+            else if (currentGame === "ai") {
+                if (gameState.score < gameState.aiScore) {
+                    addAchievement("普通成就：……而弱者愈强，游戏名称：贪吃蛇游戏（人机版）");
+                } else if (gameState.score > gameState.aiScore) {
+                    addAchievement("困难成就：强者愈弱……，游戏名称：贪吃蛇游戏（人机版）");
+                } else if (gameState.score >= gameState.aiScore + 100) {
+                    addAchievement("神话成就：小小AI，拿捏！，游戏名称：贪吃蛇游戏（人机版）");
+                }
+            }
+            
+            // 双人机对战成就
+            else if (currentGame === "double-ai") {
+                if (gameState.aiScore >= 300 || gameState.ai2Score >= 300) {
+                    addAchievement("普通成就：神仙打架，游戏名称：贪吃蛇游戏（双人机版）");
+                }
+                if (gameState.aiScore >= 800 || gameState.ai2Score >= 800) {
+                    addAchievement("困难成就：神仙打架2.0，游戏名称：贪吃蛇游戏（双人机版）");
+                }
+            }
+        }
+        
+        // 添加成就
+        function addAchievement(achievement) {
+            if (!achievements.includes(achievement)) {
+                achievements.push(achievement);
+                updateAchievementList();
+                console.log(`完成成就: ${achievement}`);
+            }
+        }
+        
+        // 更新成就列表
+        function updateAchievementList() {
+            achievementList.innerHTML = "";
+            
+            for (const achievement of achievements) {
+                const li = document.createElement("li");
+                const parts = achievement.split("，");
+                li.innerHTML = `<span>${parts[0]}</span> <span>已达成</span>`;
+                achievementList.appendChild(li);
+            }
+        }
+        
+        // 开始游戏
+        function startGame() {
+            if (gameState.gameStarted) {
+                resetGame();
+                return;
+            }
+            
+            gameMessage.classList.add('hidden');
+            gameState.gameStarted = true;
+            updateButtonState();
+            
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            
+            gameInterval = setInterval(gameLoop, gameState.gameSpeed);
+        }
+        
+        // 暂停游戏
+        function pauseGame() {
+            if (!gameState.gameStarted) {
+                return;
+            }
+            
+            if (!gamePaused) {
+                if (gameInterval) {
+                    clearInterval(gameInterval);
+                }
+                gamePaused = true;
+                pauseBtn.innerHTML = '<i class="fas fa-play"></i> 继续';
+                resetBtn.disabled = true;
+                
+                // 显示暂停消息
+                gameMessage.classList.remove('hidden');
+                gameMessage.innerHTML = `
+                    <h2>游戏暂停</h2>
+                    <p>当前得分: ${gameState.score}</p>
+                    <button class="btn btn-start" id="continue-btn"><i class="fas fa-play"></i> 继续游戏</button>
+                `;
+                
+                // 绑定继续按钮事件
+                const continueBtn = document.getElementById('continue-btn');
+                continueBtn.addEventListener('click', pauseGame);
+            } else {
+                gamePaused = false;
+                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停';
+                resetBtn.disabled = false;
+                gameMessage.classList.add('hidden');
+                gameInterval = setInterval(gameLoop, gameState.gameSpeed);
+            }
+        }
+        
+        // 处理触摸事件
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+        
+        function handleTouchEnd(e) {
+            if (!gameState.gameStarted || currentGame === "double-ai") return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            // 确定滑动方向
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // 水平滑动
+                if (diffX > 0 && gameState.direction !== "left") {
+                    gameState.nextDirection = "right";
+                } else if (diffX < 0 && gameState.direction !== "right") {
+                    gameState.nextDirection = "left";
+                }
+            } else {
+                // 垂直滑动
+                if (diffY > 0 && gameState.direction !== "up") {
+                    gameState.nextDirection = "down";
+                } else if (diffY < 0 && gameState.direction !== "down") {
+                    gameState.nextDirection = "up";
+                }
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 键盘控制
+            document.addEventListener("keydown", handleKeyPress);
+            
+            // 按钮事件
+            startBtn.addEventListener("click", startGame);
+            pauseBtn.addEventListener("click", pauseGame);
+            resetBtn.addEventListener("click", resetGame);
+            
+            // 游戏选择按钮
+            const gameButtons = document.querySelectorAll(".game-btn");
+            gameButtons.forEach(btn => {
+                btn.addEventListener("click", selectGame);
+            });
+            
+            // 虚拟方向键控制
+            document.querySelector(".key.up").addEventListener("click", () => changeDirection("up"));
+            document.querySelector(".key.down").addEventListener("click", () => changeDirection("down"));
+            document.querySelector(".key.left").addEventListener("click", () => changeDirection("left"));
+            document.querySelector(".key.right").addEventListener("click", () => changeDirection("right"));
+            
+            // 触摸控制
+            touchArea.addEventListener("touchstart", handleTouchStart, {passive: true});
+            touchArea.addEventListener("touchend", handleTouchEnd, {passive: true});
+        }
+        
+        // 处理键盘按键
+        function handleKeyPress(event) {
+            if (!gameState.gameStarted || currentGame === "double-ai") {
+                return;
+            }
+            
+            const key = event.key;
+            if ((key === "ArrowUp" || key === "w" || key === "W") && gameState.direction !== "down") {
+                gameState.nextDirection = "up";
+            } else if ((key === "ArrowDown" || key === "s" || key === "S") && gameState.direction !== "up") {
+                gameState.nextDirection = "down";
+            } else if ((key === "ArrowLeft" || key === "a" || key === "A") && gameState.direction !== "right") {
+                gameState.nextDirection = "left";
+            } else if ((key === "ArrowRight" || key === "d" || key === "D") && gameState.direction !== "left") {
+                gameState.nextDirection = "right";
+            }
+        }
+        
+        // 改变方向
+        function changeDirection(direction) {
+            if (!gameState.gameStarted || currentGame === "double-ai") {
+                return;
+            }
+            
+            if (direction === "up" && gameState.direction !== "down") {
+                gameState.nextDirection = "up";
+            } else if (direction === "down" && gameState.direction !== "up") {
+                gameState.nextDirection = "down";
+            } else if (direction === "left" && gameState.direction !== "right") {
+                gameState.nextDirection = "left";
+            } else if (direction === "right" && gameState.direction !== "left") {
+                gameState.nextDirection = "right";
+            }
+        }
+        
+        // 选择游戏模式
+        function selectGame(event) {
+            // 更新按钮状态
+            const gameButtons = document.querySelectorAll(".game-btn");
+            gameButtons.forEach(btn => {
+                btn.classList.remove("active");
+            });
+            
+            event.target.classList.add("active");
+            currentGame = event.target.dataset.game;
+            
+            // 重置游戏
+            resetGame();
+        }
+        
+        // 初始化游戏
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
